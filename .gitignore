@@ -1,0 +1,8 @@
+.idea
+coco_utils/*
+!coco_utils/README.md
+
+cus_data/*
+!cus_data/dataset_rsicd.json
+
+command
