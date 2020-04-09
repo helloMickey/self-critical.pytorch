@@ -57,7 +57,7 @@ class AttModel(CaptionModel):
         self.rnn_size = opt.rnn_size
         self.num_layers = opt.num_layers
         self.drop_prob_lm = opt.drop_prob_lm
-        self.seq_length = getattr(opt, 'max_length', 20) or opt.seq_length # maximum sample length
+        self.seq_length = getattr(opt, 'max_length', 20) or opt.seq_length  # maximum sample length
         self.fc_feat_size = opt.fc_feat_size
         self.att_feat_size = opt.att_feat_size
         self.att_hid_size = opt.att_hid_size
@@ -471,8 +471,8 @@ class AdaAtt_lstm(nn.Module):
 
     def forward(self, xt, img_fc, state):
 
-        hs = []
-        cs = []
+        hs = []  # hidden state stack
+        cs = []  # sell state stack
         for L in range(self.num_layers):
             # c,h from previous timesteps
             prev_h = state[0][L]
@@ -486,8 +486,9 @@ class AdaAtt_lstm(nn.Module):
                 x = F.dropout(x, self.drop_prob_lm, self.training)
                 i2h = self.i2h[L-1](x)
 
+            # [N, 4*hidden_size] or [N, (4+(maxout==True))*hidden_size]
             all_input_sums = i2h+self.h2h[L](prev_h)
-
+            # 0-3 for gate
             sigmoid_chunk = all_input_sums.narrow(1, 0, 3 * self.rnn_size)
             sigmoid_chunk = torch.sigmoid(sigmoid_chunk)
             # decode the gates
@@ -499,6 +500,7 @@ class AdaAtt_lstm(nn.Module):
                 in_transform = torch.tanh(all_input_sums.narrow(1, 3 * self.rnn_size, self.rnn_size))
             else:
                 in_transform = all_input_sums.narrow(1, 3 * self.rnn_size, 2 * self.rnn_size)
+                # 此处实际上对应 maxout 的 k=2 的情况，对应 drop_out 的 p=0.5（maxout与dropout的相应关系）
                 in_transform = torch.max(\
                     in_transform.narrow(1, 0, self.rnn_size),
                     in_transform.narrow(1, self.rnn_size, self.rnn_size))
@@ -507,7 +509,7 @@ class AdaAtt_lstm(nn.Module):
             # gated cells form the output
             tanh_nex_c = torch.tanh(next_c)
             next_h = out_gate * tanh_nex_c
-            if L == self.num_layers-1:
+            if L == self.num_layers-1:  # 判断是否为最顶层
                 if L == 0:
                     i2h = self.r_w2h(x) + self.r_v2h(img_fc)
                 else:
@@ -523,6 +525,7 @@ class AdaAtt_lstm(nn.Module):
         top_h = F.dropout(top_h, self.drop_prob_lm, self.training)
         fake_region = F.dropout(fake_region, self.drop_prob_lm, self.training)
 
+        # [num_layers, N, hidden_size]
         state = (torch.cat([_.unsqueeze(0) for _ in hs], 0), 
                 torch.cat([_.unsqueeze(0) for _ in cs], 0))
         return top_h, fake_region, state

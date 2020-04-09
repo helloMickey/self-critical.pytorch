@@ -3,22 +3,18 @@ from __future__ import division
 from __future__ import print_function
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-
-import numpy as np
 
 import time
 import os
-from six.moves import cPickle
 import traceback
 from collections import defaultdict
 
 import opts
 import models
-from dataloader import *
-import skimage.io
+# from dataloader import DataLoader
+from cus_data_loader import CusDataLoader as DataLoader
+
 import eval_utils
 import misc.utils as utils
 from misc.rewards import init_scorer, get_self_critical_reward
@@ -35,9 +31,10 @@ def train(opt):
     # Build dataloader
     ################################
     loader = DataLoader(opt)
-    opt.vocab_size = loader.vocab_size
-    opt.seq_length = loader.seq_length
-
+    # opt.vocab_size = loader.vocab_size
+    # opt.seq_length = loader.seq_length
+    opt.vocab_size = 3062
+    opt.seq_length = 31
     ##########################
     # Initialize infos
     ##########################
@@ -109,7 +106,7 @@ def train(opt):
     # For back compatibility
     if 'iterators' in infos:
         infos['loader_state_dict'] = {split: {'index_list': infos['split_ix'][split], 'iter_counter': infos['iterators'][split]} for split in ['train', 'val', 'test']}
-    loader.load_state_dict(infos['loader_state_dict'])
+    # loader.load_state_dict(infos['loader_state_dict'])
     if opt.load_best_score == 1:
         best_val_score = infos.get('best_val_score', None)
     if opt.noamopt:
@@ -132,7 +129,7 @@ def train(opt):
                     # Assign the learning rate
                     if epoch > opt.learning_rate_decay_start and opt.learning_rate_decay_start >= 0:
                         frac = (epoch - opt.learning_rate_decay_start) // opt.learning_rate_decay_every
-                        decay_factor = opt.learning_rate_decay_rate  ** frac
+                        decay_factor = opt.learning_rate_decay_rate ** frac
                         opt.current_lr = opt.learning_rate * decay_factor
                     else:
                         opt.current_lr = opt.learning_rate
@@ -140,7 +137,7 @@ def train(opt):
                 # Assign the scheduled sampling prob
                 if epoch > opt.scheduled_sampling_start and opt.scheduled_sampling_start >= 0:
                     frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every
-                    opt.ss_prob = min(opt.scheduled_sampling_increase_prob  * frac, opt.scheduled_sampling_max_prob)
+                    opt.ss_prob = min(opt.scheduled_sampling_increase_prob * frac, opt.scheduled_sampling_max_prob)
                     model.ss_prob = opt.ss_prob
 
                 # If start self critical training
@@ -223,14 +220,16 @@ def train(opt):
             # update infos
             infos['iter'] = iteration
             infos['epoch'] = epoch
-            infos['loader_state_dict'] = loader.state_dict()
-            
+            # infos['loader_state_dict'] = loader.state_dict()
+            infos['loader_state_dict'] = None
+
             # make evaluation on validation set, and save model
             if (iteration % opt.save_checkpoint_every == 0 and not opt.save_every_epoch) or \
                 (epoch_done and opt.save_every_epoch):
                 # eval model
-                eval_kwargs = {'split': 'val',
-                                'dataset': opt.input_json}
+                # eval_kwargs = {'split': 'val',
+                #                 'dataset': opt.input_json}
+                eval_kwargs = {'split': 'val'}
                 eval_kwargs.update(vars(opt))
                 val_loss, predictions, lang_stats = eval_utils.eval_split(
                     dp_model, lw_model.crit, loader, eval_kwargs)
@@ -277,6 +276,7 @@ def train(opt):
         stack_trace = traceback.format_exc()
         print(stack_trace)
 
-
+# python train.py --id fc --caption_model newfc --input_json data/cocotalk.json --input_fc_dir data/cocotalk_fc --input_att_dir data/cocotalk_att --input_label_h5 data/cocotalk_label.h5 --batch_size 10 --learning_rate 5e-4 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path log_fc --save_checkpoint_every 6000 --val_images_use 5000 --max_epochs 30
+# --id cus_fc --caption_model newfc --batch_size 32 --learning_rate 5e-4 --learning_rate_decay_start 0 --scheduled_sampling_start 0 --checkpoint_path log_cusfc --save_checkpoint_every 1000 --max_epochs 50
 opt = opts.parse_opt()
 train(opt)

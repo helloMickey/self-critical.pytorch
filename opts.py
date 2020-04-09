@@ -4,25 +4,35 @@ import misc.utils as utils
 
 def parse_opt():
     parser = argparse.ArgumentParser()
+
+    # CusData input settings
+    parser.add_argument('--cus_image_path', type=str, default='/disk2/sharing_data/remote_sensing_caption/RSICD/RSICD_images',
+                    help='')
+    parser.add_argument('--cus_split_path', type=str, default='cus_data/data_split_2.json',
+                    help='')
+    parser.add_argument('--cus_vocab_path', type=str, default='cus_data/vocabulary_2.json',
+                    help='')
+
+    # for coco --input_json data/coco.json  --input_fc_dir data/cocotalk_fc --input_box_dir data/cocotalk_box --input_label_h5 data/coco_label.h5 --cached_tokens coco-train-idxs
     # Data input settings
-    parser.add_argument('--input_json', type=str, default='data/coco.json',
+    parser.add_argument('--input_json', type=str, default='',
                     help='path to the json file containing additional info and vocab')
-    parser.add_argument('--input_fc_dir', type=str, default='data/cocotalk_fc',
+    parser.add_argument('--input_fc_dir', type=str, default='',
                     help='path to the directory containing the preprocessed fc feats')
-    parser.add_argument('--input_att_dir', type=str, default='data/cocotalk_att',
+    parser.add_argument('--input_att_dir', type=str, default='',
                     help='path to the directory containing the preprocessed att feats')
-    parser.add_argument('--input_box_dir', type=str, default='data/cocotalk_box',
+    parser.add_argument('--input_box_dir', type=str, default='',
                     help='path to the directory containing the boxes of att feats')
-    parser.add_argument('--input_label_h5', type=str, default='data/coco_label.h5',
+    parser.add_argument('--input_label_h5', type=str, default='',
                     help='path to the h5file containing the preprocessed dataset')
     parser.add_argument('--start_from', type=str, default=None,
-                    help="""continue training from saved model at this path. Path must contain files saved by previous training process: 
+                    help="""continue training from saved model at this path. Path must contain files saved by previous training process:
                         'infos.pkl'         : configuration;
                         'checkpoint'        : paths to model file(s) (created by tf).
                                               Note: this file contains absolute paths, be careful when moving files around;
                         'model.ckpt-*'      : file(s) with model definition (created by tf)
                     """)
-    parser.add_argument('--cached_tokens', type=str, default='coco-train-idxs',
+    parser.add_argument('--cached_tokens', type=str, default='',
                     help='Cached token file for calculating cider score during self critical training.')
 
     # Model settings
@@ -118,7 +128,7 @@ def parse_opt():
 
 
     # Evaluation/Checkpointing
-    parser.add_argument('--val_images_use', type=int, default=3200,
+    parser.add_argument('--val_images_use', type=int, default=1000,
                     help='how many images to use when periodically evaluating the validation loss? (-1 = all)')
     parser.add_argument('--save_checkpoint_every', type=int, default=2500,
                     help='how often to save a model checkpoint (in iterations)?')
@@ -128,7 +138,7 @@ def parse_opt():
                     help='If save checkpoints at every save point')
     parser.add_argument('--checkpoint_path', type=str, default=None,
                     help='directory to store checkpointed models')
-    parser.add_argument('--language_eval', type=int, default=0,
+    parser.add_argument('--language_eval', type=int, default=1,
                     help='Evaluate language as well (1 = yes, 0 = no)? BLEU/CIDEr/METEOR/ROUGE_L? requires coco-caption code from Github.')
     parser.add_argument('--losses_log_every', type=int, default=25,
                     help='How often do we snapshot losses, for inclusion in the progress dump? (0 = disable)')       

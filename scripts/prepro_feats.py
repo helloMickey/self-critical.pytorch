@@ -85,17 +85,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # input json
-    parser.add_argument('--input_json', required=True, help='input json file to process into hdf5')
-    parser.add_argument('--output_dir', default='data', help='output h5 file')
+    # parser.add_argument('--input_json', required=True, help='input json file to process into hdf5')
+    parser.add_argument('--input_json', default='../data/dataset_coco.json', help='input json file to process into hdf5')
+    parser.add_argument('--output_dir', default='../data/', help='output h5 file')
 
     # options
-    parser.add_argument('--images_root', default='', help='root location in which images are stored, to be prepended to file_path in input json')
+    parser.add_argument('--images_root', default='/disk2/sharing_data/coco/images', help='root location in which images are stored, to be prepended to file_path in input json')
     parser.add_argument('--att_size', default=14, type=int, help='14x14 or 7x7')
     parser.add_argument('--model', default='resnet101', type=str, help='resnet101, resnet152')
-    parser.add_argument('--model_root', default='./data/imagenet_weights', type=str, help='model root')
+    parser.add_argument('--model_root', default='../data/imagenet_weights', type=str, help='model root')
 
     args = parser.parse_args()
     params = vars(args) # convert to ordinary dict
     print('parsed input parameters:')
     print(json.dumps(params, indent = 2))
     main(params)
+# CUDA_VISIBLE_DEVICES=2,3 nohup python scripts/prepro_feats.py > process.log 2>&1 &

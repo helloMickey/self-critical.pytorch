@@ -11,8 +11,9 @@ from six.moves import cPickle
 
 import opts
 import models
-from dataloader import *
-from dataloaderraw import *
+# from dataloader import *
+# from dataloaderraw import *
+from cus_data_loader import CusDataLoader as DataLoader
 import eval_utils
 import argparse
 import misc.utils as utils
@@ -68,7 +69,8 @@ if opt.only_lang_eval == 1 or (not opt.force and os.path.isfile(pred_fn)):
             pass
 
     predictions, n_predictions = torch.load(pred_fn)
-    lang_stats = eval_utils.language_eval(opt.input_json, predictions, n_predictions, vars(opt), opt.split)
+    # lang_stats = eval_utils.language_eval(opt.input_json, predictions, n_predictions, vars(opt), opt.split)
+    lang_stats = eval_utils.cus_language_eval(opt.input_json, predictions, n_predictions, vars(opt), opt.split)
     print(lang_stats)
     os._exit(0)
 
@@ -96,16 +98,17 @@ model.eval()
 crit = utils.LanguageModelCriterion()
 
 # Create the Data Loader instance
-if len(opt.image_folder) == 0:
-    loader = DataLoader(opt)
-else:
-    loader = DataLoaderRaw({'folder_path': opt.image_folder, 
-                            'coco_json': opt.coco_json,
-                            'batch_size': opt.batch_size,
-                            'cnn_model': opt.cnn_model})
+# if len(opt.image_folder) == 0:
+#     loader = DataLoader(opt)
+# else:
+#     loader = DataLoaderRaw({'folder_path': opt.image_folder,
+#                             'coco_json': opt.coco_json,
+#                             'batch_size': opt.batch_size,
+#                             'cnn_model': opt.cnn_model})
+loader = DataLoader(opt)
 # When eval using provided pretrained model, the vocab may be different from what you have in your cocotalk.json
 # So make sure to use the vocab in infos file.
-loader.dataset.ix_to_word = infos['vocab']
+# loader.dataset.ix_to_word = infos['vocab']
 
 
 # Set sample options

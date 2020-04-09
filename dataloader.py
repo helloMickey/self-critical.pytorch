@@ -16,6 +16,9 @@ import torch.utils.data as data
 import multiprocessing
 import six
 
+
+
+
 class HybridLoader:
     """
     If db_path is a director, then use normal file loading
@@ -299,7 +302,8 @@ class DataLoader:
                                                   batch_size=self.batch_size,
                                                   sampler=sampler,
                                                   pin_memory=True,
-                                                  num_workers=4, # 4 is usually enough
+                                                  # num_workers=4, # 4 is usually enough
+                                                  num_workers=0, # 4 is usually enough
                                                   collate_fn=lambda x: self.dataset.collate_func(x, split),
                                                   drop_last=False)
             self.iters[split] = iter(self.loaders[split])
@@ -401,4 +405,57 @@ class MySampler(data.sampler.Sampler):
             'iter_counter': self.iter_counter - prefetched_num
         }
 
-    
+
+import opts
+if __name__ == '__main__':
+    opt = opts.parse_opt()
+    loader = DataLoader(opt)
+
+    seq_length = loader.seq_length  # int 16
+    vocab = loader.get_vocab()  # dic {'0': 'a', '1': 'man',....}
+    state_dict = loader.state_dict()  # dic
+
+    for i in range(100):
+        data = loader.get_batch('test')
+        state_dict = loader.state_dict()
+
+    print("end!")
+    pass
+    """
+    train
+    data_batch={
+    'fc_feats' = [N, feat_size]  Tensor
+    'att_feats' = [N, 0, 0] Tensor
+    'att_mask' = None
+    'labels' = [N, 5, padding_lengths] N*5*18 Tensor
+    [[   0,    1,  433, 1280,  360,   32,   14,   16,   17,    1,  645,
+             0,    0,    0,    0,    0,    0,    0],
+         [   0, 1637, 1280, 1284,   28, 1285,   32, 3663,   17,  645,    0,
+             0,    0,    0,    0,    0,    0,    0],
+         [   0,    1,   20,  360,   32,    1,  645,    6,  839, 1283, 1086,
+             0,    0,    0,    0,    0,    0,    0],
+         [   0, 1280,  360,   98,   32,  839, 1283, 1716,   32,   14,   16,
+            17,    1,  645,    0,    0,    0,    0],
+         [   0,    1,   38,   39,    1, 1283, 3664,   55,  499,   35,   32,
+             1,  645,    3,    1,    2,   32,    0]],
+    'masks' = [N, 5, padding_lengths] (1 or 0) Tensor
+        [[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0.,
+          0.],
+         [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0., 0.,
+          0.],
+         [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 0.,
+          0.],
+         [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0.,
+          0.],
+         [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+          1.]],
+    'gts' = list [N] value: 5*16
+    [[   1   20   64   39    1 1037 1820  370    6  233  720 2690   32   14,   355    0], 
+    [   1 2669  298  938  117 1874  114 1347 1348    0    0    0    0    0,     0    0], 
+    [   1   20 2287   35   11    1 1562 2596    0    0    0    0    0    0,     0    0],
+    [   1   54 4061 2484 2491    1    7 2596    0    0    0    0    0    0,     0    0], 
+    [   1   54 4796    1 2596   32   14 1347    0    0    0    0    0    0,     0    0]]
+    'bounds' = {'it_pos_now': 10, 'it_max': 5000, 'wrapped': False}
+    'infos' = list [N] value: {'ix': 25317, 'id': 497668, 'file_path': 'val2014/COCO_val2014_000000497668.jpg'}
+    }
+    """
